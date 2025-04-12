@@ -1,42 +1,44 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, StyleSheet, Clipboard } from 'react-native';
-// import DocumentPicker from 'react-native-document-picker';
-// import axios from 'axios';
+import { View, Text, TouchableOpacity, Alert, StyleSheet, Image } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
+import Clipboard from '@react-native-clipboard/clipboard';
+import axios from 'axios';
 
 export default function ShareScreen() {
     const [file, setFile] = useState(null);
     const [result, setResult] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    // Function to pick a file
-    const pickFile = async () => {
-        try {
-            const res = await DocumentPicker.pickSingle({
-                type: [DocumentPicker.types.images], // Allow image selection
-            });
-            setFile(res);
-        } catch (err) {
-            if (DocumentPicker.isCancel(err)) {
-                console.log('User cancelled file picker');
-            } else {
-                console.error('Error picking file:', err);
+    const pickImage = async () => {
+        launchImageLibrary(
+            {
+                mediaType: 'photo',
+            },
+            (response) => {
+                if (response.didCancel) {
+                    console.log('User cancelled image picker');
+                } else if (response.errorCode) {
+                    console.log('ImagePicker Error:', response.errorMessage);
+                } else if (response.assets && response.assets.length > 0) {
+                    const asset = response.assets[0];
+                    setFile(asset);
+                    setResult('');
+                }
             }
-        }
+        );
     };
 
-    // Function to upload file
     const uploadFile = async (data) => {
         try {
-            const response = await axios.post("http://your-backend-url.com/share", data, {
+            const response = await axios.post("http://10.0.2.2:5000/share", data, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            console.log(response.data);
             return response.data;
         } catch (error) {
             console.error("Error in upload:", error);
         }
     };
 
-    // Function to handle file upload
     const handleSubmit = async () => {
         if (!file) {
             Alert.alert("Please select a file first.");
@@ -44,21 +46,23 @@ export default function ShareScreen() {
         }
 
         const data = new FormData();
-        data.append("name", file.name);
+        data.append("name", file.fileName);
         data.append("file", {
             uri: file.uri,
-            name: file.name,
+            name: file.fileName,
             type: file.type,
         });
 
+        setLoading(true);
         const response = await uploadFile(data);
+        setLoading(false);
+
         if (response) {
             setResult(response);
             setFile(null);
         }
     };
 
-    // Function to copy link
     const copyLinkToClipboard = () => {
         if (result) {
             Clipboard.setString(result);
@@ -69,9 +73,8 @@ export default function ShareScreen() {
     return (
         <View style={styles.container}>
             <Text style={styles.heading}>Share</Text>
-            <Text style={styles.subheading}>Select an image or file to share</Text>
+            <Text style={styles.subheading}>Select an image to share</Text>
 
-            {/* Display Shareable Link */}
             {result && (
                 <View style={styles.resultContainer}>
                     <Text style={styles.linkText}>{result}</Text>
@@ -81,13 +84,23 @@ export default function ShareScreen() {
                 </View>
             )}
 
-            {/* File Upload Section */}
-            <TouchableOpacity style={styles.button} onPress={pickFile}>
-                <Text style={styles.buttonText}>{file ? file.name : "Choose File"}</Text>
+            {file && (
+                <Image
+                    source={{ uri: file.uri }}
+                    style={{ width: 200, height: 200, borderRadius: 10, marginBottom: 10 }}
+                />
+            )}
+
+            <TouchableOpacity style={styles.button} onPress={pickImage}>
+                <Text style={styles.buttonText}>{file ? file.fileName : "Choose Image"}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.uploadButton} onPress={handleSubmit}>
-                <Text style={styles.buttonText}>Share</Text>
+            <TouchableOpacity
+                style={[styles.uploadButton, loading && { opacity: 0.6 }]}
+                onPress={handleSubmit}
+                disabled={loading}
+            >
+                <Text style={styles.buttonText}>{loading ? "Sharing..." : "Share"}</Text>
             </TouchableOpacity>
         </View>
     );

@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, Text, View, TouchableOpacity} from 'react-native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {NavigationContainer} from '@react-navigation/native';
+import {NavigationContainer, useNavigation} from '@react-navigation/native';
 
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
 
@@ -10,6 +10,9 @@ import HomeScreen from '../screens/HomeScreen';
 import AboutScreen from '../screens/AboutScreen';
 import ShareScreen from '../screens/ShareScreen';
 import UploadScreen from '../screens/UploadScreen';
+
+import Register from '../componnents/Register';
+import Login from '../componnents/Login';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -100,7 +103,29 @@ function MainStack() {
         component={BottomTabs}
         options={{headerShown: false}}
       />
+      <Stack.Screen
+        name="Register"
+        component={Register}
+        options={{ title: 'Register' }}
+      />
+      <Stack.Screen
+        name="Login"
+        component={Login}
+        options={{ title: 'Login' }}
+      />
     </Stack.Navigator>
+  );
+}
+
+function ProfileButton() {
+  const navigation = useNavigation();
+
+  return (
+    <TouchableOpacity
+      style={styles.profileButton}
+      onPress={() => navigation.navigate('Register')}>
+      <Text style={styles.profileText}>P</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -109,13 +134,7 @@ export default function StackNavigator() {
     <NavigationContainer>
       <View style={{flex: 1}}>
         <MainStack />
-        {/* Profile Button on Top-Right */}
-        <TouchableOpacity
-          style={styles.profileButton}
-          onPress={() => console.log('Profile Button Pressed')}>
-          <Text style={styles.profileText}>U</Text>{' '}
-          {/* Replace "U" with User Initials */}
-        </TouchableOpacity>
+        <ProfileButton />
       </View>
     </NavigationContainer>
   );
